@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+._*
+
+# The full-resolution masters. These are Essel's sellable files — they stay on
+# the machine and on a backup drive, never in the repository and never on the
+# live site. netlify.toml also blocks /originals/ at the edge, but the real
+# protection is simply not pushing them.
+originals/
+
+# The admin's automatic backups. They accumulate one per editing day and are a
+# safety net on THIS machine — they are not what gets deployed, so committing
+# them would grow the repository forever for no benefit.
+data/backups/
+
+# Everything else IS committed on purpose, including the generated photos and
+# content.json, so the repository always matches what is deployed and a bad
+# change can be rolled back to a working page.
+
+# The optional render audit installs jsdom here. It must never be pushed.
+node_modules/
+package-lock.json
+
+# The handover guide. For Essel, never for the public.
+START HERE.html

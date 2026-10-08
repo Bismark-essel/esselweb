@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"
+     role="img" aria-label="Essel De Photographer">
+  <title>Essel De Photographer</title>
+  <!-- THE FAVICON IS THE CAMERA MARK, NOT THE WORDMARK, AND THE COLOURS ARE
+       WRITTEN OUT.
+
+       It used to be the full traced wordmark: 57 KB, and a line of lettering
+       squeezed into a 16px browser tab, where it is a grey smudge. A mark
+       nobody can read is not a mark. This is 1 KB and it is a camera, which
+       reads at any size.
+
+       THE COLOURS ARE EXPLICIT AND THAT IS LOAD-BEARING. The site's own marks
+       use `currentColor` so they take the colour of the type around them —
+       correct inside a page, and WRONG here. A favicon is loaded through
+       <link rel="icon">, which makes it a SEPARATE DOCUMENT: it never sees
+       this site's colour, so `currentColor` would resolve to black and the
+       mark would vanish on a dark browser tab. The same trap once made a
+       themed logo silently do nothing elsewhere in this workspace.
+
+       So the ground is drawn dark and the camera is drawn white, and neither
+       depends on anything outside this file.
+
+       Geometry copied from images/mark-small.svg, scaled into a 256 box with
+       a 22px margin: translate(18,53) scale(1.0182). Change the mark there
+       and this is the second place to change. -->
+  <rect width="256" height="256" rx="52" fill="#0A0A0A"/>
+  <g transform="translate(18,53) scale(1.0182)"
+     fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="3.4" d="
+      M 12 56
+      Q 12 49 19 49
+      L 63 49
+      Q 70 49 73 43
+      L 80 28
+      Q 83 22 90 22
+      L 130 22
+      Q 137 22 140 28
+      L 147 43
+      Q 150 49 157 49
+      L 201 49
+      Q 208 49 208 56
+      L 208 128
+      Q 208 135 201 135
+      L 19 135
+      Q 12 135 12 128
+      Z"/>
+    <path stroke-width="3" d="M 165 36 L 189 36"/>
+    <circle cx="110" cy="92" r="38" stroke-width="3"/>
+    <circle cx="110" cy="92" r="24" stroke-width="3"/>
+    <circle cx="188" cy="66" r="5.5" fill="#FFFFFF" stroke="none"/>
+  </g>
+</svg>

@@ -1,0 +1,51 @@
+# Netlify build settings.
+#
+# publish = "." because this site has no compile step — the files in this
+# folder ARE the site. Nothing is generated at deploy time, so a Netlify
+# outage, a Node version change or a broken dependency cannot break a build
+# that does not run.
+#
+# Run PUBLISH.command locally before pushing. It generates robots.txt and the
+# sitemap, pre-renders the photographs into the HTML, and refuses to finish if
+# anything is wrong.
+
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Photographs never change once written — the filename carries a unique id,
+# so a new picture is a new file. Cache them hard.
+[[headers]]
+  for = "/photos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The editor and the originals must never be reachable from the live site.
+[[redirects]]
+  from = "/admin.html"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/originals/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# START HERE.html is the handover guide written for Essel. It is not part of
+# the public site: it names what is unfinished and how to log in to things.
+# It carries noindex as well, but a 404 at the edge is the part that does not
+# depend on a crawler behaving.
+[[redirects]]
+  from = "/START HERE.html"
+  to = "/404.html"
+  status = 404
+  force = true

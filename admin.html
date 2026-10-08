@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Essel — editor</title>
+<style>
+/* ===========================================================================
+   THE EDITOR
+   Offline. Reads and writes content.js and the photos folder directly on
+   disk. No server, no upload, no account, nothing that can lapse.
+
+   It enforces the image rules so the website cannot be bypassed:
+   drop a photograph in, it is resized to four widths, converted to WebP at
+   sensible quality, and recorded with a ratio and a focal point. Nobody has
+   to know a filename convention or write srcset by hand.
+   ========================================================================= */
+:root{
+  --ink:#0A0A0A; --surface:#121212; --raised:#1B1B1B; --line:#2B2B2B;
+  --paper:#F4F4F4; --muted:#8C8C8C; --bright:#FFF;
+  --ok:#5FA37E; --warn:#C9A227; --bad:#C4574B;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --serif:Georgia,'Times New Roman',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--paper);font-family:var(--sans);
+  font-size:14.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+img{display:block;max-width:100%}
+
+.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:14px clamp(14px,3vw,28px);
+  background:rgba(10,10,10,.96);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand b{font-weight:700;letter-spacing:.42em;text-transform:uppercase;font-size:.92rem}
+.brand span{display:block;font-size:.44rem;letter-spacing:.36em;text-transform:uppercase;
+  color:var(--muted);margin-top:5px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{background:none;border:1px solid transparent;padding:8px 14px;cursor:pointer;
+  font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:var(--muted);border-radius:2px}
+.tabs button:hover{color:var(--paper)}
+.tabs button.on{color:var(--ink);background:var(--paper)}
+.act{display:flex;gap:8px;align-items:center}
+.btn{background:var(--paper);color:var(--ink);border:0;padding:10px 18px;cursor:pointer;
+  font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;border-radius:2px}
+.btn.ghost{background:none;color:var(--paper);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--paper)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.sm{padding:7px 12px;font-size:.6rem}
+.btn.danger{background:none;border:1px solid var(--bad);color:var(--bad)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:26px clamp(14px,3vw,28px) 120px}
+.sec{display:none}.sec.on{display:block}
+h2{font-family:var(--serif);font-weight:400;font-size:1.7rem;margin-bottom:6px}
+.sub{color:var(--muted);font-size:.85rem;margin-bottom:22px;max-width:60em}
+
+.card{background:var(--surface);border:1px solid var(--line);padding:20px;margin-bottom:14px}
+.row{display:grid;gap:14px}
+@media(min-width:700px){.row.c2{grid-template-columns:1fr 1fr}.row.c3{grid-template-columns:repeat(3,1fr)}}
+label{display:block;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin-bottom:7px}
+input[type=text],input[type=url],input[type=email],select,textarea{
+  width:100%;background:var(--ink);border:1px solid var(--line);padding:11px 13px;
+  border-radius:2px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--paper)}
+textarea{min-height:90px;resize:vertical;line-height:1.6}
+.hint{font-size:.74rem;color:var(--muted);margin-top:6px}
+.req{color:var(--bad)}
+
+/* drop zone */
+.drop{border:1.5px dashed var(--line);padding:44px 20px;text-align:center;cursor:pointer;
+  transition:.25s;background:var(--surface)}
+.drop:hover,.drop.over{border-color:var(--paper);background:var(--raised)}
+.drop b{display:block;font-size:1rem;margin-bottom:6px}
+.drop span{color:var(--muted);font-size:.82rem}
+
+/* image rows */
+.imgs{display:grid;gap:12px}
+.irow{display:grid;gap:16px;background:var(--surface);border:1px solid var(--line);padding:14px}
+@media(min-width:820px){.irow{grid-template-columns:190px 1fr}}
+.thumb{position:relative;width:100%;aspect-ratio:var(--ar,4/5);overflow:hidden;background:var(--raised);cursor:crosshair}
+.thumb img{width:100%;height:100%;object-fit:cover;object-position:var(--fp,50% 50%)}
+.dot{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border:2px solid #fff;
+  border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.7),0 0 8px rgba(0,0,0,.6);pointer-events:none}
+.previews{display:flex;gap:8px;margin-top:10px}
+.pv{flex:1}
+.pv .lab{font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:4px;font-weight:700}
+.pv .box{position:relative;width:100%;overflow:hidden;background:var(--raised)}
+.pv .box img{width:100%;height:100%;object-fit:cover;object-position:var(--fp,50% 50%)}
+.pv.m .box{aspect-ratio:9/16}.pv.t .box{aspect-ratio:3/4}.pv.d .box{aspect-ratio:16/9}
+
+.flag{display:inline-block;font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:800;padding:4px 8px;border-radius:2px;margin-right:6px}
+.flag.ok{background:rgba(95,163,126,.16);color:var(--ok)}
+.flag.warn{background:rgba(201,162,39,.16);color:var(--warn)}
+.flag.bad{background:rgba(196,87,75,.16);color:var(--bad)}
+
+.catrow{display:flex;gap:10px;align-items:center;background:var(--surface);
+  border:1px solid var(--line);padding:12px 14px;margin-bottom:8px}
+.catrow .grab{cursor:grab;color:var(--muted);padding:0 4px;user-select:none}
+.catrow input{flex:1}
+.catrow.drag{opacity:.4}
+
+.gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;
+  background:var(--ink);padding:24px;text-align:center}
+.gate div{max-width:34em}
+.gate h1{font-family:var(--serif);font-weight:400;font-size:2rem;margin-bottom:12px}
+.gate p{color:var(--muted);margin-bottom:20px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,90px);z-index:150;
+  background:var(--paper);color:var(--ink);padding:12px 22px;font-weight:700;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;transition:transform .3s;border-radius:2px}
+.toast.show{transform:translate(-50%,0)}
+.bar{position:fixed;inset:auto 0 0 0;height:3px;background:var(--paper);width:0;
+  z-index:160;transition:width .2s}
+.muted{color:var(--muted)}
+.hidden{display:none !important}
+.srow{display:grid;gap:14px;background:var(--surface);border:1px solid var(--line);
+  padding:14px;margin-bottom:10px}
+@media(min-width:820px){.srow{grid-template-columns:230px 1fr}}
+.srow .n{position:absolute;top:8px;left:8px;z-index:3;background:var(--paper);
+  color:var(--ink);font-size:.55rem;font-weight:800;padding:4px 8px;letter-spacing:.14em}
+.srow .wide{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;
+  background:var(--raised);cursor:crosshair}
+.srow .wide img{width:100%;height:100%;object-fit:cover;object-position:var(--fp,50% 40%)}
+.socrow{display:flex;gap:10px;align-items:center;background:var(--surface);
+  border:1px solid var(--line);padding:10px 12px;margin-bottom:8px}
+.socrow .ico{width:22px;height:22px;flex:none;color:var(--paper);opacity:.8}
+.socrow .ico svg{width:100%;height:100%;display:block}
+.socrow input{flex:1;min-width:0}
+.socrow .who{font-size:.7rem;color:var(--muted);min-width:80px;font-weight:600}
+.frow{display:grid;gap:16px;background:var(--surface);border:1px solid var(--line);
+  padding:14px;margin-bottom:10px}
+@media(min-width:820px){.frow{grid-template-columns:230px 1fr}}
+.frow .still{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;
+  background:var(--raised);cursor:crosshair}
+.frow .still img{width:100%;height:100%;object-fit:cover;object-position:var(--fp,50% 50%)}
+.idx{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;
+  border-left:3px solid var(--line);background:var(--ink)}
+.idx.on{border-left-color:var(--ok)}
+.idx.off{border-left-color:var(--muted)}
+.idx.blocked{border-left-color:var(--warn)}
+.idx b{display:block;font-size:.95rem;margin-bottom:3px}
+.idx span{font-size:.82rem;color:var(--muted);display:block}
+.idx .dot2{width:9px;height:9px;border-radius:50%;margin-top:7px;flex:none}
+.idx.on .dot2{background:var(--ok)}
+.idx.off .dot2{background:var(--muted)}
+.idx.blocked .dot2{background:var(--warn)}
+.wapv{margin-top:14px;display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.wapv .who{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);font-weight:700}
+.wapv .bub{background:#0F5C46;color:#F1F5F3;padding:9px 13px;border-radius:12px 12px 12px 3px;
+  max-width:34em;font-size:.86rem;line-height:1.5;white-space:pre-wrap}
+.wapv .bub.alt{background:#1B1B1B;color:#C9C9C9}
+.frow .noneyet{position:absolute;inset:0;display:grid;place-items:center;
+  font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#4A4A4A;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <div>
+    <h1>Essel — editor</h1>
+    <p>Everything on the website is edited here. It works offline, writes
+       straight to the folder on this computer, and never uploads anything.</p>
+    <p><b>Chrome or Edge only.</b> Safari and Firefox cannot write to a folder,
+       which is how this works.</p>
+    <button class="btn" id="pick">Open the website folder</button>
+    <p class="hint" style="margin-top:18px">Choose the folder containing
+       <b>index.html</b>.</p>
+  </div>
+</div>
+
+<header class="top hidden" id="top">
+  <div class="brand"><b>Essel</b><span>Editor</span></div>
+  <nav class="tabs" id="tabs">
+    <button data-t="photos" class="on">Photographs</button>
+    <button data-t="cats">Collections</button>
+    <button data-t="hero">Hero</button>
+    <button data-t="film">Film</button>
+    <button data-t="details">Details</button>
+  </nav>
+  <div class="act">
+    <span class="muted" id="state" style="font-size:.7rem"></span>
+    <button class="btn" id="save" disabled>Save</button>
+  </div>
+</header>
+
+<main class="wrap hidden" id="app">
+
+  <!-- PHOTOGRAPHS -->
+  <section class="sec on" id="sec-photos">
+    <h2>Photographs</h2>
+    <p class="sub">Drop pictures in. Each one is resized to four widths and
+      converted to WebP automatically — you never have to think about file
+      sizes or names. The original is kept untouched in <b>originals/</b>.</p>
+
+    <div class="drop" id="drop">
+      <b>Drop photographs here</b>
+      <span>or click to choose &middot; JPG, PNG or WebP &middot; <b>2000&nbsp;px wide</b></span>
+      <input type="file" id="file" accept="image/*" multiple class="hidden">
+    </div>
+    <div class="hint" style="margin-top:10px">
+      <b>Export 2000&nbsp;px on the WIDTH</b> — portraits <b>2000&nbsp;&times;&nbsp;2500</b> (4:5),
+      landscapes <b>2000&nbsp;&times;&nbsp;1333</b> (3:2). 2000 is the largest version this
+      editor builds, so a 6000&nbsp;px file is thrown away after a long wait. Under
+      1200&nbsp;px wide it warns you, because it will look soft on a laptop.<br>
+      Send a <b>high-quality JPEG in sRGB</b> and do not compress it first — the WebP is
+      made here at 90 / 88 / 84 / 80 depending on size. Compressing twice is what makes
+      skin look plastic.<br>
+      <b>Crop to the ratio before exporting.</b> Each photograph keeps the shape you give
+      it, so one 3:2 frame dropped into a 4:5 collection leaves a step in the grid.</div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="row c3">
+        <div>
+          <label>Show</label>
+          <select id="filter"><option value="">Every collection</option></select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="sort">
+            <option value="added">Newest first</option>
+            <option value="cat">By collection</option>
+          </select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="muted" id="count" style="padding-top:11px;font-size:.8rem"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="imgs" id="imgs"></div>
+  </section>
+
+  <!-- COLLECTIONS -->
+  <section class="sec" id="sec-cats">
+    <h2>Collections</h2>
+    <p class="sub">Add, rename, reorder or remove. The website follows —
+      the menu, the collections page and every grid are built from this list.
+      <b>Renaming is safe. Removing a collection that still has photographs is
+      refused</b>, so work cannot be lost by accident.</p>
+    <div id="cats"></div>
+    <button class="btn ghost sm" id="addcat">Add a collection</button>
+  </section>
+
+  <!-- HERO -->
+  <section class="sec" id="sec-hero">
+    <h2>The opening screen</h2>
+    <p class="sub">One photograph fills the first screen. Keep the middle of the
+      frame quiet and darker, put the subject slightly to one side, and leave
+      the top clear — the name sits across the centre.</p>
+    <div id="slides"></div>
+    <div class="drop" id="drop-hero">
+      <b>Drop a photograph for the opening screen</b>
+      <span>Up to five &middot; wide, 2560 &times; 1707 &middot; they fade slowly, one into the next</span>
+      <input type="file" id="file-hero" accept="image/*" multiple class="hidden">
+    </div>
+    <div class="card">
+      <div class="row c2">
+        <div><label>Small line above the name</label>
+          <input type="text" id="h-eyebrow"><div class="hint">One or two words. Leave empty for none.</div></div>
+        <div><label>Button text</label><input type="text" id="h-cta"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILM -->
+  <section class="sec" id="sec-film">
+    <h2>Film</h2>
+    <p class="sub">Films are shown as <b>a single still</b> that opens YouTube when
+      clicked. No player is embedded, so the page stays as light as it is now and
+      nothing on it depends on YouTube still working the same way in three years.
+      <br><br>Choose the still the way you would choose a photograph — it sits
+      beside his stills and is judged the same.</p>
+
+    <div id="films"></div>
+    <button class="btn ghost sm" id="addfilm">Add a film</button>
+  </section>
+
+  <!-- DETAILS -->
+  <section class="sec" id="sec-details">
+    <h2>Details</h2>
+    <p class="sub">Name, words and how people reach him. Everything here appears
+      on the website exactly as typed.</p>
+    <div class="card">
+      <div class="row c2">
+        <div><label>Name, large</label><input type="text" id="c-name"></div>
+        <div><label>Line beneath it</label><input type="text" id="c-descriptor"></div>
+        <div><label>Full name</label><input type="text" id="c-legal"></div>
+        <div><label>City</label><input type="text" id="c-city"></div>
+      </div>
+      <div style="margin-top:14px">
+        <label>One line describing the work</label>
+        <input type="text" id="c-tagline">
+      </div>
+      <div style="margin-top:14px">
+        <label>Domain <span class="muted">— leave empty until bought</span></label>
+        <input type="text" id="c-domain" placeholder="esseldephotographer.com">
+        <div class="hint">Used in one place only, to build the sitemap and canonical links.</div>
+      </div>
+    </div>
+
+    <!-- The single most consequential setting on the site, so it gets a card of
+         its own, states its own current condition, and cannot be switched on
+         until there is a domain for a search engine to point at. -->
+    <div class="card" id="idx-card">
+      <label>Being found on Google</label>
+      <div id="idx-state"></div>
+      <button class="btn ghost sm" id="idx-toggle" style="margin-top:14px"></button>
+      <div class="hint" id="idx-hint"></div>
+    </div>
+    <div class="card">
+      <div class="row c3">
+        <div><label>WhatsApp number</label><input type="text" id="k-whatsapp" placeholder="233…">
+          <div class="hint">With country code, no plus.</div></div>
+        <div><label>Phone</label><input type="text" id="k-phone"></div>
+        <div><label>Email</label><input type="email" id="k-email"></div>
+      </div>
+      <div style="margin-top:18px">
+        <label>What WhatsApp opens with</label>
+        <textarea id="k-wamsg" rows="2"
+          placeholder="Hello Essel. I saw {page} on your website and I would like to talk about a shoot."></textarea>
+        <div class="hint">WhatsApp opens on a blank box, and a blank box is where
+          most enquiries die — nobody wants to compose an opening line to a stranger
+          about money while standing up. This is typed in for them; they can change it
+          before sending.<br>
+          Write <b>{page}</b> where the thing they were looking at should go. It becomes
+          <i>the portrait work</i>, <i>the events work</i> and so on, or <i>your work</i>
+          when they came from the home page. Leave the box empty to use the wording above.</div>
+        <div class="wapv" id="wapv"></div>
+      </div>
+    </div>
+    <div class="card">
+      <label>Where else he is <span class="muted">— shown as icons, never as words</span></label>
+      <div id="socs"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <select id="soc-new" style="max-width:220px">
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="facebook">Facebook</option>
+          <option value="x">X</option>
+          <option value="youtube">YouTube</option>
+          <option value="linkedin">LinkedIn</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="pinterest">Pinterest</option>
+          <option value="other">Something else</option>
+        </select>
+        <button class="btn ghost sm" id="soc-add">Add</button>
+      </div>
+      <div class="hint">Only add accounts he actually keeps up. A dead account
+        that somebody clicks does more harm than a missing icon.</div>
+    </div>
+
+    <div class="card">
+      <label>About &mdash; his own words</label>
+      <textarea id="a-body" placeholder="Left empty until Essel writes it. Do not invent this."></textarea>
+      <div class="hint">Blank paragraphs are simply not shown. An empty section is better than a made-up one.</div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="bar" id="bar"></div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════════
+   STATE
+   The file on disk is the truth. Everything here is a working copy of it.
+   ═══════════════════════════════════════════════════════════════════════ */
+var DIR = null, PHOTOS = null, ORIGS = null, D = null, DIRTY = false;
+var MACHINE = (navigator.platform || 'this computer');
+var WIDTHS  = [400, 800, 1200, 2000];
+
+/* Quality by size. Bigger images are seen larger, so they get more.
+   Never pushed low enough to soften — a photographer's work must not look
+   compressed. Visual quality first, filesize second. */
+function qualityFor(w){ return w >= 2000 ? 0.90 : w >= 1200 ? 0.88 : w >= 800 ? 0.84 : 0.80; }
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show')},2600); }
+function progress(p){ $('bar').style.width = (p*100)+'%';
+  if(p>=1) setTimeout(function(){ $('bar').style.width='0' },400); }
+function dirty(){ DIRTY=true; $('save').disabled=false; $('state').textContent='unsaved changes'; }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random())).slice(0,8); }
+function slugify(s){ return String(s).toLowerCase().trim()
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'untitled'; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE FOLDER
+   ═══════════════════════════════════════════════════════════════════════ */
+$('pick').onclick = async function(){
+  if(!window.showDirectoryPicker){
+    alert('This browser cannot write to a folder. Use Chrome or Edge.'); return;
+  }
+  try{
+    DIR = await window.showDirectoryPicker({ mode:'readwrite' });
+    PHOTOS = await DIR.getDirectoryHandle('photos',   {create:true});
+    ORIGS  = await DIR.getDirectoryHandle('originals',{create:true});
+    await load();
+    $('gate').classList.add('hidden');
+    $('top').classList.remove('hidden');
+    $('app').classList.remove('hidden');
+  }catch(e){ if(e.name!=='AbortError') alert('Could not open that folder.\n\n'+e.message); }
+};
+
+/* ── the file is a SCRIPT, not JSON ───────────────────────────────────────
+   A browser will not let a page opened from a folder read a JSON file beside
+   it; a <script> tag has no such rule, which is why index.html now opens on a
+   double-click. The data inside is still plain JSON — only the wrapper is new,
+   so unwrap on the way in and wrap on the way out, in these two functions and
+   nowhere else. */
+var FILE_HEAD =
+  '/* ============================================================================\n' +
+  '   ESSEL DE PHOTOGRAPHER — the whole website is in this one file.\n' +
+  '\n' +
+  '   THIS IS A SCRIPT, NOT A JSON FILE. A browser will not let a page opened\n' +
+  '   from a folder read a JSON file beside it; a <script> tag has no such rule,\n' +
+  '   which is why index.html opens on a double-click with nothing installed.\n' +
+  '\n' +
+  '   Written by admin.html. Do not type in here — one stray quotation mark\n' +
+  '   takes the whole site down, and the editor cannot make that mistake.\n' +
+  '   ========================================================================= */\n' +
+  'window.SITE_DATA = ';
+
+function wrapFile(json){ return FILE_HEAD + json + ';\n'; }
+function unwrapFile(txt){
+  if(!txt || !txt.trim()) return {};
+  var i = txt.indexOf('window.SITE_DATA');
+  if(i < 0) return JSON.parse(txt);           /* an old content.json, still readable */
+  var body = txt.slice(txt.indexOf('=', i) + 1).trim().replace(/;\s*$/, '');
+  return JSON.parse(body);
+}
+
+async function load(){
+  var data = await DIR.getDirectoryHandle('data',{create:true});
+  var fh   = await data.getFileHandle('content.js',{create:true});
+  var txt  = await (await fh.getFile()).text();
+  D = unwrapFile(txt);
+
+  /* Divergence guard. Two copies on two machines drift silently and there is
+     no undo for overwriting the newer one with the older. */
+  var seen = null;
+  try{ seen = JSON.parse(localStorage.getItem('essel_lastSeen')||'null'); }catch(e){}
+  if(seen && (D.meta.saves||0) < (seen.saves||0)){
+    var go = confirm('This file looks OLDER than the last one opened on this computer.\n\n'+
+      'On disk: save #'+(D.meta.saves||0)+'\nLast seen: save #'+seen.saves+
+      ' ('+(seen.savedAt||'')+')\n\nContinuing could overwrite newer work. Continue?');
+    if(!go){ location.reload(); return; }
+  }
+  fill();
+  $('state').textContent = 'save #'+(D.meta.saves||0);
+}
+
+async function save(){
+  D.meta.saves   = (D.meta.saves||0)+1;
+  D.meta.machine = MACHINE;
+  D.meta.savedAt = new Date().toISOString();
+
+  var json = JSON.stringify(D, null, 2);
+  var data = await DIR.getDirectoryHandle('data',{create:true});
+  var fh   = await data.getFileHandle('content.js',{create:true});
+  var w    = await fh.createWritable(); await w.write(wrapFile(json)); await w.close();
+
+  /* A dated backup, once a day, by itself. An export you must remember is an
+     export that does not exist. */
+  var day = new Date().toISOString().slice(0,10);
+  if(localStorage.getItem('essel_lastBackup') !== day){
+    var b = await data.getDirectoryHandle('backups',{create:true});
+    var bf= await b.getFileHandle('content '+day+'.json',{create:true});
+    var bw= await bf.createWritable(); await bw.write(json); await bw.close();
+    localStorage.setItem('essel_lastBackup', day);
+  }
+  localStorage.setItem('essel_lastSeen', JSON.stringify(
+    {saves:D.meta.saves, savedAt:D.meta.savedAt, machine:MACHINE}));
+
+  DIRTY=false; $('save').disabled=true; $('state').textContent='save #'+D.meta.saves;
+  toast('Saved');
+}
+$('save').onclick = function(){ save().catch(function(e){ alert('Could not save.\n\n'+e.message); }); };
+window.addEventListener('beforeunload', function(e){ if(DIRTY){ e.preventDefault(); e.returnValue=''; } });
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE IMAGE PIPELINE — where sharpness is won or lost
+
+   Drawing a 6000px photograph straight down to 400px in one step makes the
+   browser throw away detail badly; the result looks soft and aliased. Halving
+   repeatedly until close to the target, then drawing the last step, keeps the
+   detail. That is the whole trick, and it is why this is not one line.
+   ═══════════════════════════════════════════════════════════════════════ */
+function stepDown(source, targetW, targetH){
+  var cw = source.width, ch = source.height;
+  var cur = document.createElement('canvas');
+  cur.width = cw; cur.height = ch;
+  var cx = cur.getContext('2d');
+  cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+  cx.drawImage(source, 0, 0, cw, ch);
+
+  while(cw > targetW * 2){
+    var nw = Math.max(targetW, Math.floor(cw/2));
+    var nh = Math.max(targetH, Math.floor(ch/2));
+    var nx = document.createElement('canvas');
+    nx.width = nw; nx.height = nh;
+    var g = nx.getContext('2d');
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(cur, 0, 0, nw, nh);
+    cur = nx; cw = nw; ch = nh;
+  }
+  var out = document.createElement('canvas');
+  out.width = targetW; out.height = targetH;
+  var o = out.getContext('2d');
+  o.imageSmoothingEnabled = true; o.imageSmoothingQuality = 'high';
+  o.drawImage(cur, 0, 0, targetW, targetH);
+  return out;
+}
+
+function canvasToBlob(c, q){
+  return new Promise(function(res){ c.toBlob(function(b){ res(b); }, 'image/webp', q); });
+}
+
+async function writeFile(dirHandle, name, blob){
+  var fh = await dirHandle.getFileHandle(name, {create:true});
+  var w  = await fh.createWritable();
+  await w.write(blob); await w.close();
+}
+
+/* Produce the four widths from one upload. Never upscales — if the original is
+   900px wide there is no 2000 variant, because inventing pixels looks worse
+   than serving a smaller file. */
+async function processImage(file, baseName, onStep){
+  var bmp = await createImageBitmap(file);
+  var made = [], ratio = bmp.height / bmp.width;
+
+  for(var i=0;i<WIDTHS.length;i++){
+    var w = WIDTHS[i];
+    if(w > bmp.width && i > 0) break;          /* no upscaling */
+    var tw = Math.min(w, bmp.width);
+    var th = Math.round(tw * ratio);
+    var canvas = stepDown(bmp, tw, th);
+    var blob = await canvasToBlob(canvas, qualityFor(w));
+    await writeFile(PHOTOS, baseName+'-'+w+'.webp', blob);
+    made.push({ w:w, bytes:blob.size });
+    if(onStep) onStep((i+1)/WIDTHS.length);
+  }
+  /* The master, untouched, outside the published tree. */
+  await writeFile(ORIGS, baseName+'-original.'+(file.name.split('.').pop()||'jpg'), file);
+  bmp.close && bmp.close();
+  return { made:made, width:bmp.width, height:bmp.height };
+}
+
+function nearestRatio(w,h){
+  var r = w/h;
+  var opts = [['3/2',1.5],['4/5',0.8],['1/1',1],['16/9',1.777],['3/4',0.75],['2/3',0.667]];
+  var best = opts[0], d = 1e9;
+  opts.forEach(function(o){ var x=Math.abs(r-o[1]); if(x<d){d=x;best=o;} });
+  return best[0];
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ADDING PHOTOGRAPHS
+   ═══════════════════════════════════════════════════════════════════════ */
+function wireDrop(zoneId, inputId, handler){
+  var z = $(zoneId), i = $(inputId);
+  z.onclick = function(){ i.click(); };
+  i.onchange = function(){ if(i.files.length) handler(Array.prototype.slice.call(i.files)); i.value=''; };
+  ['dragenter','dragover'].forEach(function(e){
+    z.addEventListener(e, function(ev){ ev.preventDefault(); z.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(e){
+    z.addEventListener(e, function(ev){ ev.preventDefault(); z.classList.remove('over'); }); });
+  z.addEventListener('drop', function(ev){
+    var f = Array.prototype.slice.call(ev.dataTransfer.files).filter(function(x){ return /^image\//.test(x.type); });
+    if(f.length) handler(f);
+  });
+}
+
+wireDrop('drop','file', async function(files){
+  var cat = (D.categories[0]||{}).slug || '';
+  for(var n=0;n<files.length;n++){
+    var f = files[n];
+    var base = 'photos/' + slugify(f.name.replace(/\.[^.]+$/,'')) + '-' + uid();
+    var shortName = base.split('/').pop();
+    try{
+      var r = await processImage(f, shortName, function(p){
+        progress((n + p)/files.length); });
+
+      if(r.width < 1200){
+        toast('Warning: ' + f.name + ' is only ' + r.width + 'px wide — it will look soft on a large screen.');
+      }
+      D.images.unshift({
+        id: uid(),
+        src: base,
+        alt: '',
+        category: cat,
+        ratio: nearestRatio(r.width, r.height),
+        focal: '50% 50%',
+        featured: false,
+        showcase: false,
+        w: r.width, h: r.height,
+        added: new Date().toISOString()
+      });
+    }catch(e){ alert('Could not process ' + f.name + '\n\n' + e.message); }
+  }
+  progress(1); dirty(); renderImages();
+  toast(files.length + (files.length===1?' photograph added':' photographs added'));
+});
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE OPENING SCREEN — up to five photographs
+
+   They cross-fade slowly behind the fixed name. Not a carousel: no arrows,
+   no dots, nothing to click. Five is the ceiling on purpose — beyond that
+   nobody sees the later ones and the page carries weight for nothing.
+
+   THE HARD PART IS NOT TECHNICAL. The name sits across the middle of every
+   one of them. A single bright or busy centre and the headline vanishes on
+   that slide alone, which is worse than a bright hero throughout, because
+   nobody notices a fault that only appears every thirty seconds.
+   ═══════════════════════════════════════════════════════════════════════ */
+var MAX_SLIDES = 5;
+
+wireDrop('drop-hero','file-hero', async function(files){
+  var room = MAX_SLIDES - (D.hero.slides || []).length;
+  if(room <= 0){ alert('Five is the limit for the opening screen.\n\nRemove one first.'); return; }
+  files = files.slice(0, room);
+
+  for(var i=0;i<files.length;i++){
+    var f = files[i];
+    var name  = 'photos/hero-' + uid();
+    var short = name.split('/').pop();
+    try{
+      var bmp = await createImageBitmap(f);
+      var tw  = Math.min(2560, bmp.width);
+      var th  = Math.round(tw * bmp.height / bmp.width);
+      var blob = await canvasToBlob(stepDown(bmp, tw, th), 0.90);
+      await writeFile(PHOTOS, short + '.webp', blob);
+      await writeFile(ORIGS,  short + '-original.' + (f.name.split('.').pop()||'jpg'), f);
+      if(bmp.width < 2000) toast('Note: ' + f.name + ' is only ' + bmp.width + 'px wide. 2560 is ideal.');
+      (D.hero.slides = D.hero.slides || []).push(
+        { desktop: name + '.webp', mobile: '', focal: '50% 40%', alt: '' });
+      bmp.close && bmp.close();
+      progress((i+1)/files.length);
+    }catch(e){ alert('Could not process ' + f.name + '\n\n' + e.message); }
+  }
+  dirty(); renderSlides();
+});
+
+function renderSlides(){
+  var S = D.hero.slides || [];
+  $('drop-hero').classList.toggle('hidden', S.length >= MAX_SLIDES);
+
+  if(!S.length){ $('slides').innerHTML = ''; return; }
+
+  $('slides').innerHTML = S.map(function(s, i){
+    return '<div class="srow" data-i="'+i+'">'+
+      '<div>'+
+        '<div class="wide" data-focal style="--fp:'+esc(s.focal||'50% 40%')+'">'+
+          '<span class="n">'+(i+1)+'</span>'+
+          '<img src="'+esc(s.desktop)+'?v='+Date.now()+'" alt="">'+
+          '<div class="dot" style="left:'+parseFloat(s.focal||'50')+'%;top:'+
+            (parseFloat((s.focal||'50% 40%').split(' ')[1])||40)+'%"></div>'+
+        '</div>'+
+        '<div class="hint">Click to set what must stay in frame.</div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="margin-bottom:10px">'+
+          (i===0 ? '<span class="flag ok">Shown first</span>' : '')+
+          (s.mobile ? '<span class="flag ok">Has a tall version</span>'
+                    : '<span class="flag warn">No tall version — the wide one will be cropped on phones</span>')+
+        '</div>'+
+        /* The hero photographs are the largest images on the site and were the
+           only ones with nowhere to describe them. publish.js has always asked
+           for this; until now there was no box to answer in. */
+        '<label>What is in this photograph <span class="muted">— for search and screen readers</span></label>'+
+        '<input type="text" data-sk="alt" value="'+esc(s.alt||'')+'" '+
+          'placeholder="Bride laughing in evening light, shot from below">'+
+        '<div class="hint" style="margin-bottom:14px">The name sits across the '+
+          'middle of every slide, so describe the picture, not the studio.</div>'+
+        '<label>Tall companion, for phones <span class="muted">— 1200 &times; 1800</span></label>'+
+        '<div class="drop" data-mdrop="'+i+'" style="padding:20px 12px">'+
+          '<b>'+(s.mobile?'Replace the tall version':'Drop a tall crop')+'</b>'+
+          '<span>A different frame, not the same picture squeezed</span>'+
+        '</div>'+
+        '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'+
+          (i>0 ? '<button class="btn ghost sm" data-up="'+i+'">Move earlier</button>' : '')+
+          '<button class="btn danger sm" data-rm="'+i+'">Remove</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* Typing in a slide's fields writes straight through. Without this the
+   description box would look editable and quietly discard every keystroke —
+   which is worse than having no box at all. */
+$('slides').addEventListener('input', function(e){
+  var row = e.target.closest('.srow'); if(!row) return;
+  var k = e.target.dataset.sk; if(!k) return;
+  D.hero.slides[+row.dataset.i][k] = e.target.value;
+  dirty();
+});
+
+/* one delegated listener for the whole list */
+$('slides').addEventListener('click', async function(e){
+  var row = e.target.closest('.srow'); if(!row) return;
+  var i = +row.dataset.i, S = D.hero.slides;
+
+  var w = e.target.closest('[data-focal]');
+  if(w){
+    var r = w.getBoundingClientRect();
+    var x = Math.round(Math.min(100,Math.max(0,(e.clientX-r.left)/r.width*100)));
+    var y = Math.round(Math.min(100,Math.max(0,(e.clientY-r.top )/r.height*100)));
+    S[i].focal = x+'% '+y+'%';
+    w.style.setProperty('--fp', S[i].focal);
+    var d = w.querySelector('.dot'); d.style.left=x+'%'; d.style.top=y+'%';
+    dirty(); return;
+  }
+  if(e.target.dataset.up !== undefined){
+    var m = S.splice(i,1)[0]; S.splice(i-1,0,m); dirty(); renderSlides(); return;
+  }
+  if(e.target.dataset.rm !== undefined){
+    if(confirm('Remove this photograph from the opening screen?\n\nThe original stays in the originals folder.')){
+      S.splice(i,1); dirty(); renderSlides();
+    }
+    return;
+  }
+  var md = e.target.closest('[data-mdrop]');
+  if(md){ pickTall(+md.dataset.mdrop); }
+});
+
+/* the tall companion — opened from the row rather than a fixed input */
+function pickTall(i){
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async function(){
+    var f = inp.files[0]; if(!f) return;
+    var name = 'photos/hero-tall-' + uid(), short = name.split('/').pop();
+    try{
+      var bmp = await createImageBitmap(f);
+      if(bmp.width > bmp.height) {
+        if(!confirm('That looks like a landscape picture.\n\nThe tall version is for phones and should be portrait. Use it anyway?')){
+          bmp.close && bmp.close(); return;
+        }
+      }
+      var tw = Math.min(1200, bmp.width);
+      var th = Math.round(tw * bmp.height / bmp.width);
+      var blob = await canvasToBlob(stepDown(bmp, tw, th), 0.90);
+      await writeFile(PHOTOS, short + '.webp', blob);
+      await writeFile(ORIGS,  short + '-original.' + (f.name.split('.').pop()||'jpg'), f);
+      D.hero.slides[i].mobile = name + '.webp';
+      bmp.close && bmp.close();
+      dirty(); renderSlides();
+    }catch(e){ alert('Could not process that image.\n\n' + e.message); }
+  };
+  inp.click();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   RENDER
+   ═══════════════════════════════════════════════════════════════════════ */
+function catOptions(sel){
+  return D.categories.map(function(c){
+    return '<option value="'+esc(c.slug)+'"'+(c.slug===sel?' selected':'')+'>'+esc(c.name)+'</option>';
+  }).join('');
+}
+
+function renderImages(){
+  var f = $('filter').value, s = $('sort').value;
+  var list = D.images.filter(function(i){ return !f || i.category===f; });
+  if(s==='cat') list = list.slice().sort(function(a,b){ return (a.category||'').localeCompare(b.category||''); });
+
+  $('count').textContent = list.length + ' shown · ' + D.images.length + ' in total';
+
+  if(!list.length){
+    $('imgs').innerHTML = '<div class="card muted" style="text-align:center;padding:40px">'+
+      'No photographs yet.</div>'; return;
+  }
+
+  $('imgs').innerHTML = list.map(function(img){
+    var src = img.src ? img.src+'-800.webp' : '';
+    var noAlt = !String(img.alt||'').trim();
+    var small = img.w && img.w < 1200;
+    return '<div class="irow" data-id="'+esc(img.id)+'">'+
+      '<div>'+
+        '<div class="thumb" data-focal style="--ar:'+esc((img.ratio||'4/5').replace('/',' / '))+
+             ';--fp:'+esc(img.focal||'50% 50%')+'">'+
+          (src?'<img src="'+esc(src)+'" alt="">':'')+
+          '<div class="dot" style="left:'+parseFloat(img.focal||'50')+'%;top:'+
+            (parseFloat((img.focal||'50% 50%').split(' ')[1])||50)+'%"></div>'+
+        '</div>'+
+        '<div class="hint">Click the picture to set what must stay in frame.</div>'+
+        '<div class="previews">'+
+          ['m','t','d'].map(function(k){
+            var lab = k==='m'?'Phone':k==='t'?'Tablet':'Wide';
+            return '<div class="pv '+k+'"><div class="lab">'+lab+'</div>'+
+              '<div class="box" style="--fp:'+esc(img.focal||'50% 50%')+'">'+
+              (src?'<img src="'+esc(src)+'" alt="">':'')+'</div></div>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="margin-bottom:10px">'+
+          (noAlt?'<span class="flag bad">Needs a description</span>':'<span class="flag ok">Described</span>')+
+          (small?'<span class="flag warn">Only '+img.w+'px wide</span>':'')+
+          (img.featured?'<span class="flag ok">On the home page</span>':'')+
+          (img.showcase?'<span class="flag ok">Opens out in its collection</span>':'')+
+        '</div>'+
+        '<label>What is in the photograph <span class="req">*</span></label>'+
+        '<input type="text" data-k="alt" value="'+esc(img.alt)+'" placeholder="A woman laughing at a wedding reception, lit from behind">'+
+        '<div class="hint">Written for someone who cannot see it. Required — the site will not publish without it.</div>'+
+        '<div class="row c3" style="margin-top:12px">'+
+          '<div><label>Collection</label><select data-k="category">'+catOptions(img.category)+'</select></div>'+
+          '<div><label>Shape</label><select data-k="ratio">'+
+            ['4/5','3/2','1/1','16/9','3/4','2/3'].map(function(r){
+              return '<option'+(r===img.ratio?' selected':'')+'>'+r+'</option>'; }).join('')+
+          '</select></div>'+
+          '<div><label>&nbsp;</label>'+
+            '<button class="btn ghost sm" data-a="feature" style="width:100%">'+
+              (img.featured?'Remove from home':'Show on home')+'</button></div>'+
+        '</div>'+
+        '<div style="margin-top:12px">'+
+          '<button class="btn ghost sm" data-a="showcase">'+
+            (img.showcase?'Stop this opening out':'Let this one open out')+'</button>'+
+          '<div class="hint">One photograph per collection can be set full width above the '+
+            'grid, opening as the visitor scrolls to it. Choosing another moves it. '+
+            'Where a browser does not do this, the photograph simply sits open — nothing '+
+            'is missing.</div>'+
+        '</div>'+
+        '<div style="margin-top:14px;display:flex;gap:8px">'+
+          '<button class="btn danger sm" data-a="del">Remove</button>'+
+          '<span class="muted" style="font-size:.72rem;padding-top:8px">'+
+            (img.w?img.w+' × '+img.h+' original':'')+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+/* one delegated listener for the whole list */
+$('imgs').addEventListener('input', function(e){
+  var row = e.target.closest('.irow'); if(!row) return;
+  var img = byId(row.dataset.id); if(!img) return;
+  var k = e.target.dataset.k; if(!k) return;
+  img[k] = e.target.value;
+  if(k==='ratio'){ row.querySelector('.thumb').style.setProperty('--ar', img.ratio.replace('/',' / ')); }
+  if(k==='alt'){
+    var f = row.querySelector('.flag');
+    var ok = !!img.alt.trim();
+    f.className = 'flag ' + (ok?'ok':'bad');
+    f.textContent = ok ? 'Described' : 'Needs a description';
+  }
+  dirty();
+});
+
+$('imgs').addEventListener('click', function(e){
+  var row = e.target.closest('.irow'); if(!row) return;
+  var img = byId(row.dataset.id); if(!img) return;
+
+  var thumb = e.target.closest('[data-focal]');
+  if(thumb){
+    var r = thumb.getBoundingClientRect();
+    var x = Math.round(Math.min(100,Math.max(0,(e.clientX-r.left)/r.width*100)));
+    var y = Math.round(Math.min(100,Math.max(0,(e.clientY-r.top )/r.height*100)));
+    img.focal = x+'% '+y+'%';
+    thumb.style.setProperty('--fp', img.focal);
+    var dot = thumb.querySelector('.dot'); dot.style.left=x+'%'; dot.style.top=y+'%';
+    row.querySelectorAll('.pv .box').forEach(function(b){ b.style.setProperty('--fp', img.focal); });
+    dirty(); return;
+  }
+  var a = e.target.dataset.a;
+  if(a==='feature'){ img.featured = !img.featured; dirty(); renderImages(); }
+  if(a==='showcase'){
+    var turningOn = !img.showcase;
+    /* Only one per collection. Clearing the others here is what makes the
+       button read as "move it" rather than "add another" — and it means the
+       site never has to decide between two, which it would do silently. */
+    if(turningOn) D.images.forEach(function(o){
+      if(o.category===img.category) o.showcase = false;
+    });
+    img.showcase = turningOn;
+    dirty(); renderImages();
+  }
+  if(a==='del'){
+    if(confirm('Remove this photograph from the website?\n\nThe original stays in the originals folder.')){
+      D.images = D.images.filter(function(i){ return i.id!==img.id; });
+      dirty(); renderImages();
+    }
+  }
+});
+function byId(id){ return D.images.filter(function(i){ return i.id===id; })[0]; }
+$('filter').onchange = renderImages;
+$('sort').onchange   = renderImages;
+
+/* ── COLLECTIONS ─────────────────────────────────────────────────────── */
+function renderCats(){
+  $('cats').innerHTML = D.categories.map(function(c,i){
+    var n = D.images.filter(function(x){ return x.category===c.slug; }).length;
+    return '<div class="catrow" draggable="true" data-i="'+i+'">'+
+      '<span class="grab">&#9776;</span>'+
+      '<input type="text" value="'+esc(c.name)+'" data-i="'+i+'">'+
+      '<span class="muted" style="font-size:.74rem;white-space:nowrap">'+n+' photo'+(n===1?'':'s')+'</span>'+
+      '<button class="btn danger sm" data-del="'+i+'">Remove</button>'+
+    '</div>';
+  }).join('');
+
+  var sel = $('filter');
+  sel.innerHTML = '<option value="">Every collection</option>' +
+    D.categories.map(function(c){ return '<option value="'+esc(c.slug)+'">'+esc(c.name)+'</option>'; }).join('');
+}
+
+$('cats').addEventListener('input', function(e){
+  var i = e.target.dataset.i; if(i===undefined) return;
+  /* The name changes; the slug never does. Changing a slug breaks every saved
+     link to that collection and loses the page in search. */
+  D.categories[+i].name = e.target.value;
+  dirty();
+});
+$('cats').addEventListener('click', function(e){
+  var d = e.target.dataset.del; if(d===undefined) return;
+  var c = D.categories[+d];
+  var n = D.images.filter(function(x){ return x.category===c.slug; }).length;
+  if(n){
+    alert('“'+c.name+'” still has '+n+' photograph'+(n===1?'':'s')+'.\n\n'+
+          'Move them to another collection first. Nothing is deleted by accident here.');
+    return;
+  }
+  if(confirm('Remove the “'+c.name+'” collection?')){
+    D.categories.splice(+d,1); dirty(); renderCats();
+  }
+});
+$('addcat').onclick = function(){
+  var name = prompt('Name of the new collection');
+  if(!name || !name.trim()) return;
+  var slug = slugify(name);
+  if(D.categories.some(function(c){ return c.slug===slug; })){ alert('That one already exists.'); return; }
+  D.categories.push({ slug:slug, name:name.trim(), blurb:'', cover:'', ratio:'3/2' });
+  dirty(); renderCats();
+};
+
+/* drag to reorder */
+var dragI = null;
+$('cats').addEventListener('dragstart', function(e){
+  var r=e.target.closest('.catrow'); if(!r) return; dragI=+r.dataset.i; r.classList.add('drag'); });
+$('cats').addEventListener('dragend', function(e){
+  var r=e.target.closest('.catrow'); if(r) r.classList.remove('drag'); });
+$('cats').addEventListener('dragover', function(e){ e.preventDefault(); });
+$('cats').addEventListener('drop', function(e){
+  e.preventDefault();
+  var r=e.target.closest('.catrow'); if(!r||dragI===null) return;
+  var to=+r.dataset.i;
+  var m=D.categories.splice(dragI,1)[0]; D.categories.splice(to,0,m);
+  dragI=null; dirty(); renderCats();
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BEING FOUND ON GOOGLE
+
+   One setting, and the only one on this page that changes how the outside
+   world sees the site rather than how it looks. It is deliberately awkward
+   to switch on:
+
+   - it cannot be turned on without a domain, because robots.txt and the
+     sitemap have to name an address and there is nothing to name;
+   - it asks for confirmation, because turning it ON is easy to undo in a
+     file and slow to undo in Google's index;
+   - it warns about photographs with no description, because a site indexed
+     while half-described is worse than one indexed a week later.
+
+   publish.js enforces the same rules again at push time. This is the
+   friendly copy; that is the gate.
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderIndexing(){
+  var box = $('idx-state'); if(!box) return;
+  var cfg    = D.config || (D.config = {});
+  var domain = String(cfg.domain || '').trim();
+  var on     = !!cfg.indexable;
+  var noAlt  = (D.images || []).filter(function(i){ return !String(i.alt||'').trim(); }).length;
+
+  var cls, title, sub;
+  if (on) {
+    cls='on'; title='ON — the site asks to be found';
+    sub='After the next push, ' + esc(domain) + ' invites Google in, and a sitemap '+
+        'lists every page. Expect to appear in search within days, not minutes.';
+  } else if (!domain) {
+    cls='blocked'; title='OFF — and it cannot be switched on yet';
+    sub='There is no domain. robots.txt and the sitemap have to name an address, '+
+        'and there is nothing to name. Buy the domain, put it in the box above, '+
+        'then come back here.';
+  } else {
+    cls='off'; title='OFF — the site is hidden from search';
+    sub='robots.txt currently says Disallow: / and every page carries a noindex '+
+        'tag. Nobody will find this by searching, which is correct until the work '+
+        'is on it.';
+  }
+  box.innerHTML = '<div class="idx '+cls+'"><span class="dot2"></span><div>'+
+    '<b>'+title+'</b><span>'+sub+'</span></div></div>';
+
+  var btn = $('idx-toggle');
+  btn.textContent = on ? 'Hide from search again' : 'Switch indexing on';
+  btn.disabled = !on && !domain;
+
+  $('idx-hint').innerHTML = noAlt
+    ? '<b style="color:var(--warn)">'+noAlt+' photograph'+(noAlt===1?'':'s')+
+      ' still have no description.</b> Google reads those, and so does anyone '+
+      'using a screen reader. Fill them in before switching this on — being '+
+      'indexed half-described is worse than being indexed a week later.'
+    : 'Takes effect at the next <b>PUBLISH.command</b>, which rewrites robots.txt, '+
+      'writes the sitemap and strips the noindex tags from every page.';
+}
+
+$('idx-toggle').onclick = function(){
+  var cfg = D.config, domain = String(cfg.domain||'').trim();
+
+  if (cfg.indexable){
+    if(!confirm('Hide the site from search again?\n\n'+
+      'robots.txt will block everything and the noindex tags come back.\n'+
+      'Google will drop the pages over the following days.')) return;
+    cfg.indexable = false;
+  } else {
+    if(!domain){ alert('Set the domain first. There is nothing for a search '+
+      'engine to be pointed at.'); return; }
+    var noAlt = (D.images||[]).filter(function(i){ return !String(i.alt||'').trim(); }).length;
+    if(noAlt && !confirm(noAlt+' photograph'+(noAlt===1?' has':'s have')+
+      ' no description.\n\nGoogle will index them anyway, without knowing what '+
+      'they show.\n\nSwitch indexing on regardless?')) return;
+    if(!confirm('Invite Google to index '+domain+'?\n\n'+
+      'At the next publish, robots.txt will allow crawling and a sitemap will '+
+      'list every page.\n\nThis is easy to switch off here and slow to undo in '+
+      'Google\'s index — only do it when the site is ready to be seen.')) return;
+    cfg.indexable = true;
+  }
+  dirty(); renderIndexing();
+};
+
+/* ── SIMPLE FIELDS ───────────────────────────────────────────────────── */
+var FIELDS = [
+  ['c-name','config.name'],['c-descriptor','config.descriptor'],
+  ['c-legal','config.legalName'],['c-city','config.city'],
+  ['c-tagline','config.tagline'],['c-domain','config.domain'],
+  ['k-whatsapp','contact.whatsapp'],['k-wamsg','contact.whatsappMessage'],['k-phone','contact.phone'],['k-email','contact.email'],
+  ['h-eyebrow','hero.eyebrow'],['h-cta','hero.cta'],['a-body','about.body']
+];
+function dig(path){ return path.split('.').reduce(function(o,k){ return o&&o[k]; }, D); }
+function put(path,v){ var p=path.split('.'), l=p.pop();
+  p.reduce(function(o,k){ return o[k]=o[k]||{}; }, D)[l]=v; }
+
+
+/* Shows the message as it will actually arrive, in both cases — from a
+   collection page and from the home page. A template with a token in it does
+   not read like a sentence, so it is easy to write one that is subtly wrong
+   and never notice until a client sends it back. */
+var WA_DEFAULT = 'Hello Essel. I saw {page} on your website and I would ' +
+                 'like to talk about a shoot.';
+function waPreview(){
+  var box = $('wapv'); if(!box) return;
+  var tpl = ($('k-wamsg') && $('k-wamsg').value.trim()) || WA_DEFAULT;
+  var first = (D.categories && D.categories[0]) ? D.categories[0].name.toLowerCase() : 'portrait';
+  var num = String((D.contact && D.contact.whatsapp) || '').replace(/[^0-9]/g,'');
+  box.innerHTML =
+    '<span class="who">' + (num ? 'What arrives on ' + esc(num) : 'No number set — nothing will open') + '</span>' +
+    '<div class="bub">' + esc(tpl.split('{page}').join('the ' + first + ' work')) + '</div>' +
+    '<span class="who">From the home page</span>' +
+    '<div class="bub alt">' + esc(tpl.split('{page}').join('your work')) + '</div>';
+}
+
+function fill(){
+  FIELDS.forEach(function(f){ var el=$(f[0]); if(el) el.value = dig(f[1]) || ''; });
+  FIELDS.forEach(function(f){ var el=$(f[0]); if(el) el.oninput=function(){ put(f[1], el.value); dirty(); }; });
+  renderSlides();
+  renderCats(); renderImages(); renderSocials(); renderFilms();
+  waPreview();
+  renderIndexing();
+  var dm=$('c-domain'); if(dm) dm.addEventListener('input', renderIndexing);
+  ['k-wamsg','k-whatsapp'].forEach(function(id){
+    var el=$(id); if(el) el.addEventListener('input', waPreview);
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SOCIAL LINKS
+   Stored as platform + url. The website draws the glyph from the platform,
+   so nothing here needs an image file and nothing can 404 later.
+   ═══════════════════════════════════════════════════════════════════════ */
+var SOC_ICONS = {
+  instagram:'<rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17.2" cy="6.8" r="1.15" fill="currentColor"/>',
+  tiktok:'<path d="M14 3v11.4a3.1 3.1 0 1 1-2.6-3.06" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14 3c.5 2.4 2.2 4 4.6 4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  facebook:'<path d="M15 3h-2.2A3.8 3.8 0 0 0 9 6.8V10H6.6v3.2H9V21h3.3v-7.8h2.5l.5-3.2h-3V7.1c0-.6.4-1 1-1H15z" fill="currentColor"/>',
+  x:'<path d="M4 4l16 16M20 4L4 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  youtube:'<rect x="2.5" y="5.5" width="19" height="13" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.2 9.3l5 2.7-5 2.7z" fill="currentColor"/>',
+  linkedin:'<rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="7.6" cy="7.8" r="1.25" fill="currentColor"/><path d="M7.6 10.8v6.6M11.4 17.4v-6.6M11.4 13.4c0-1.6 1-2.6 2.4-2.6s2.4 1 2.4 2.6v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  whatsapp:'<path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3.5 20.5l1.4-4.3A8.5 8.5 0 1 1 20.5 11.6z" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  pinterest:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10 20l2.2-8.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>'
+};
+var SOC_NAMES = { instagram:'Instagram', tiktok:'TikTok', facebook:'Facebook', x:'X',
+  youtube:'YouTube', linkedin:'LinkedIn', whatsapp:'WhatsApp', pinterest:'Pinterest',
+ };
+
+function socIcon(p){
+  var g = SOC_ICONS[String(p||'').toLowerCase()];
+  if(g) return '<svg viewBox="0 0 24 24">'+g+'</svg>';
+  var ch = (SOC_NAMES[p] || p || '?').charAt(0).toUpperCase();
+  return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" '+
+    'stroke="currentColor" stroke-width="1.7"/><text x="12" y="16.2" text-anchor="middle" '+
+    'font-size="10" font-weight="700" fill="currentColor">'+esc(ch)+'</text></svg>';
+}
+
+function renderSocials(){
+  var L = D.contact.socials || [];
+  if(!L.length){ $('socs').innerHTML =
+    '<div class="hint" style="padding:8px 0">None added yet.</div>'; return; }
+  $('socs').innerHTML = L.map(function(s,i){
+    if(!s.platform && s.label){ s.platform = String(s.label).toLowerCase().replace(/\s+/g,''); }
+    var nm = SOC_NAMES[s.platform] || s.platform || 'Link';
+    return '<div class="socrow" data-i="'+i+'">'+
+      '<span class="ico">'+socIcon(s.platform)+'</span>'+
+      '<span class="who">'+esc(nm)+'</span>'+
+      '<input type="text" data-url="'+i+'" value="'+esc(s.url||'')+'" placeholder="https://…">'+
+      (i>0 ? '<button class="btn ghost sm" data-sup="'+i+'">&uarr;</button>' : '')+
+      '<button class="btn danger sm" data-srm="'+i+'">Remove</button>'+
+    '</div>';
+  }).join('');
+}
+
+$('soc-add').onclick = function(){
+  var p = $('soc-new').value;
+  if(p === 'other'){
+    p = prompt('What is it called?');
+    if(!p || !p.trim()) return;
+    p = p.trim().toLowerCase();
+  }
+  D.contact.socials = D.contact.socials || [];
+  if(D.contact.socials.some(function(s){ return s.platform === p; })){
+    alert('That one is already on the list.'); return;
+  }
+  D.contact.socials.push({ platform:p, url:'' });
+  dirty(); renderSocials();
+};
+
+$('socs').addEventListener('input', function(e){
+  var i = e.target.dataset.url; if(i===undefined) return;
+  D.contact.socials[+i].url = e.target.value.trim();
+  dirty();
+});
+$('socs').addEventListener('click', function(e){
+  var L = D.contact.socials;
+  var up = e.target.dataset.sup, rm = e.target.dataset.srm;
+  if(up !== undefined){ var m=L.splice(+up,1)[0]; L.splice(+up-1,0,m); dirty(); renderSocials(); }
+  if(rm !== undefined){
+    if(confirm('Remove '+(SOC_NAMES[L[+rm].platform]||L[+rm].platform)+'?')){
+      L.splice(+rm,1); dirty(); renderSocials();
+    }
+  }
+});
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   FILM
+   A still and a link. Deliberately not an embed — a YouTube iframe pulls in
+   roughly half a megabyte of someone else's code before anybody presses play,
+   and it tracks the visitor whether or not they watch.
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderFilms(){
+  var V = D.videos || [];
+  if(!V.length){ $('films').innerHTML =
+    '<div class="hint" style="padding:10px 0">No films yet.</div>'; return; }
+
+  $('films').innerHTML = V.map(function(v,i){
+    var noUrl = !String(v.url||'').trim();
+    return '<div class="frow" data-i="'+i+'">'+
+      '<div>'+
+        '<div class="still" data-focal style="--fp:'+esc(v.focal||'50% 50%')+'">'+
+          (v.still
+            ? '<img src="'+esc(v.still)+'-800.webp" alt="">'+
+              '<div class="dot" style="left:'+parseFloat(v.focal||'50')+'%;top:'+
+                (parseFloat((v.focal||'50% 50%').split(' ')[1])||50)+'%"></div>'
+            : '<span class="noneyet">No still yet</span>')+
+        '</div>'+
+        '<div class="hint">'+(v.still?'Click to set what stays in frame.':'Drop a still below.')+'</div>'+
+        '<div class="drop" data-sdrop="'+i+'" style="padding:16px 10px;margin-top:8px">'+
+          '<b style="font-size:.82rem">'+(v.still?'Replace the still':'Add a still')+'</b>'+
+          '<span>A frame from the film &middot; 16:9</span></div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="margin-bottom:10px">'+
+          (noUrl?'<span class="flag bad">Needs the YouTube link</span>':'<span class="flag ok">Linked</span>')+
+          (v.still?'':'<span class="flag warn">No still — it will show an empty frame</span>')+
+        '</div>'+
+        '<label>Title <span class="req">*</span></label>'+
+        '<input type="text" data-fk="title" value="'+esc(v.title||'')+'" placeholder="Wedding at Labadi">'+
+        '<div class="row c2" style="margin-top:12px">'+
+          '<div><label>YouTube link <span class="req">*</span></label>'+
+            '<input type="text" data-fk="url" value="'+esc(v.url||'')+'" placeholder="https://youtu.be/…"></div>'+
+          '<div><label>Length <span class="muted">— optional</span></label>'+
+            '<input type="text" data-fk="length" value="'+esc(v.length||'')+'" placeholder="2:14"></div>'+
+        '</div>'+
+        '<div style="margin-top:12px"><label>What is in the still <span class="req">*</span></label>'+
+          '<input type="text" data-fk="alt" value="'+esc(v.alt||'')+'" placeholder="Couple dancing at dusk, shot from behind"></div>'+
+        '<div style="margin-top:14px;display:flex;gap:8px">'+
+          (i>0?'<button class="btn ghost sm" data-fup="'+i+'">Move earlier</button>':'')+
+          '<button class="btn danger sm" data-frm="'+i+'">Remove</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+$('addfilm').onclick = function(){
+  D.videos = D.videos || [];
+  D.videos.push({ id:uid(), title:'', url:'', still:'', alt:'', length:'',
+                  ratio:'16/9', focal:'50% 50%' });
+  dirty(); renderFilms();
+};
+
+$('films').addEventListener('input', function(e){
+  var row=e.target.closest('.frow'); if(!row) return;
+  var k=e.target.dataset.fk; if(!k) return;
+  D.videos[+row.dataset.i][k] = e.target.value;
+  if(k==='url' || k==='alt'){ dirty(); renderFilms(); return; }
+  dirty();
+});
+
+$('films').addEventListener('click', function(e){
+  var row=e.target.closest('.frow'); if(!row) return;
+  var i=+row.dataset.i, V=D.videos;
+
+  var st=e.target.closest('[data-focal]');
+  if(st && V[i].still){
+    var r=st.getBoundingClientRect();
+    var x=Math.round(Math.min(100,Math.max(0,(e.clientX-r.left)/r.width*100)));
+    var y=Math.round(Math.min(100,Math.max(0,(e.clientY-r.top )/r.height*100)));
+    V[i].focal=x+'% '+y+'%';
+    st.style.setProperty('--fp',V[i].focal);
+    var d=st.querySelector('.dot'); if(d){ d.style.left=x+'%'; d.style.top=y+'%'; }
+    dirty(); return;
+  }
+  if(e.target.dataset.fup!==undefined){
+    var m=V.splice(i,1)[0]; V.splice(i-1,0,m); dirty(); renderFilms(); return;
+  }
+  if(e.target.dataset.frm!==undefined){
+    if(confirm('Remove this film?\n\nThe still stays in the originals folder.')){
+      V.splice(i,1); dirty(); renderFilms();
+    }
+    return;
+  }
+  var sd=e.target.closest('[data-sdrop]');
+  if(sd) pickStill(+sd.dataset.sdrop);
+});
+
+/* The still goes through the same pipeline as any photograph — four widths,
+   stepped downscale, original kept. It is a photograph; it is treated as one. */
+function pickStill(i){
+  var inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange=async function(){
+    var f=inp.files[0]; if(!f) return;
+    var base='photos/film-'+uid(), short=base.split('/').pop();
+    try{
+      var r=await processImage(f, short, function(p){ progress(p); });
+      if(r.width<1200) toast('Note: only '+r.width+'px wide — it will look soft.');
+      D.videos[i].still=base;
+      D.videos[i].ratio=nearestRatio(r.width,r.height);
+      dirty(); renderFilms(); progress(1);
+    }catch(e){ alert('Could not process that image.\n\n'+e.message); }
+  };
+  inp.click();
+}
+
+/* ── TABS ────────────────────────────────────────────────────────────── */
+$('tabs').addEventListener('click', function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  Array.prototype.forEach.call($('tabs').children,function(x){ x.classList.toggle('on', x===b); });
+  ['photos','cats','hero','film','details'].forEach(function(t){
+    $('sec-'+t).classList.toggle('on', t===b.dataset.t); });
+});
+
+document.addEventListener('keydown', function(e){
+  if((e.metaKey||e.ctrlKey) && e.key==='s'){ e.preventDefault(); if(DIRTY) $('save').click(); }
+});
+</script>
+</body>
+</html>

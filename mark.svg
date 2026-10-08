@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 150" width="220" height="150"
+     fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+     role="img" aria-label="Essel De Photographer">
+  <title>Essel De Photographer</title>
+  <!-- Line-art camera mark. Drawn as vector, so it stays sharp at any size and
+       weighs almost nothing. `currentColor` means it takes the colour of the
+       text around it — white on the site, black on white paper, no second file. -->
+
+  <!-- body, with the pentaprism hump -->
+  <path stroke-width="3.4" d="
+    M 12 56
+    Q 12 49 19 49
+    L 63 49
+    Q 70 49 73 43
+    L 80 28
+    Q 83 22 90 22
+    L 130 22
+    Q 137 22 140 28
+    L 147 43
+    Q 150 49 157 49
+    L 201 49
+    Q 208 49 208 56
+    L 208 128
+    Q 208 135 201 135
+    L 19 135
+    Q 12 135 12 128
+    Z"/>
+
+  <!-- hot shoe -->
+  <path stroke-width="3" d="M 165 36 L 189 36"/>
+
+  <!-- lens -->
+  <circle cx="110" cy="92" r="38" stroke-width="3"/>
+  <circle cx="110" cy="92" r="22" stroke-width="2.4"/>
+
+  <!-- aperture ring, twelve blades -->
+  <g fill="currentColor" stroke="none">
+    <circle cx="110" cy="62"    r="2.7"/>
+    <circle cx="125" cy="66"    r="2.7"/>
+    <circle cx="136" cy="77"    r="2.7"/>
+    <circle cx="140" cy="92"    r="2.7"/>
+    <circle cx="136" cy="107"   r="2.7"/>
+    <circle cx="125" cy="118"   r="2.7"/>
+    <circle cx="110" cy="122"   r="2.7"/>
+    <circle cx="95"  cy="118"   r="2.7"/>
+    <circle cx="84"  cy="107"   r="2.7"/>
+    <circle cx="80"  cy="92"    r="2.7"/>
+    <circle cx="84"  cy="77"    r="2.7"/>
+    <circle cx="95"  cy="66"    r="2.7"/>
+  </g>
+
+  <!-- shutter indicator -->
+  <circle cx="188" cy="66" r="5.5" fill="currentColor" stroke="none"/>
+</svg>

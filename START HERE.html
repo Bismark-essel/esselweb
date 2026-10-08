@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Essel De Photographer — start here</title>
+<!--
+  THIS FILE IS FOR ESSEL, NOT FOR THE INTERNET.
+  It carries noindex, and netlify.toml 404s it at the edge the same way it
+  404s the editor. It is deliberately plain HTML with the styles written
+  inside it: no font server, no CDN, nothing to load. Double-click it on any
+  computer, with nothing installed, for ever.
+-->
+<style>
+  :root{ --ink:#0A0A0A; --paper:#FAFAF8; --grey:#6B6B6B; --line:#E2E2DE;
+         --soft:#F1F1ED; --warn:#8A3A1E; }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       padding:0 20px 120px}
+  .wrap{max-width:760px;margin:0 auto}
+  header.top{padding:64px 0 10px;border-bottom:3px solid var(--ink);margin-bottom:40px}
+  h1{font-size:clamp(1.9rem,6vw,2.9rem);line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .sub{color:var(--grey);margin:0 0 26px;font-size:1.05rem}
+  h2{font-size:clamp(1.3rem,4vw,1.7rem);margin:56px 0 6px;line-height:1.2;letter-spacing:-.01em}
+  h2 .num{display:inline-block;min-width:1.7em;color:var(--grey);font-weight:400}
+  h3{font-size:1.06rem;margin:30px 0 4px}
+  p{margin:.7em 0}
+  ul,ol{margin:.7em 0;padding-left:1.3em}
+  li{margin:.45em 0}
+  code{background:var(--soft);padding:2px 6px;border-radius:4px;
+       font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       word-break:break-word}
+  b,strong{font-weight:650}
+  a{color:var(--ink)}
+  .box{border:1px solid var(--line);background:#fff;border-radius:10px;
+       padding:18px 20px;margin:22px 0}
+  .box.warn{border-left:4px solid var(--warn);background:#FDF7F4}
+  .box.do{border-left:4px solid var(--ink);background:var(--soft)}
+  .box h3{margin-top:0}
+  table{border-collapse:collapse;width:100%;margin:18px 0;font-size:.95rem}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);
+        vertical-align:top}
+  th{font-weight:650;background:var(--soft)}
+  .todo{list-style:none;padding-left:0}
+  .todo li{padding-left:34px;position:relative;margin:.8em 0}
+  .todo li::before{content:"";position:absolute;left:0;top:3px;width:19px;height:19px;
+       border:2px solid var(--ink);border-radius:4px}
+  .lede{font-size:1.12rem}
+  .quiet{color:var(--grey);font-size:.93rem}
+  hr{border:0;border-top:1px solid var(--line);margin:54px 0}
+  .toc{columns:2;column-gap:34px;font-size:.96rem;margin:0 0 10px;padding-left:1.2em}
+  @media(max-width:560px){ .toc{columns:1} }
+  @media print{ body{padding:0;background:#fff} .box{break-inside:avoid} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Your website</h1>
+  <p class="sub">Essel De Photographer — how to use it, how to put it online,
+     and what is still waiting for you.</p>
+</header>
+
+<p class="lede">This was built for you at no charge. Everything that could be
+done without you is done: the website, the editor, the search setup, the
+security, and a test suite that checks ninety things every time anything
+changes.</p>
+
+<p><strong>What is left is the part only you can do.</strong> Your photographs.
+Your words. Your Google listing. Nobody can supply those, and a photographer's
+website with five pictures on it is a website that will not win you work. Read
+this once, all the way through, before you touch anything. It will take about
+twenty minutes and it will save you a week.</p>
+
+<ol class="toc">
+  <li><a href="#look">Look at it first</a></li>
+  <li><a href="#editor">The editor</a></li>
+  <li><a href="#photos">How to prepare photographs</a></li>
+  <li><a href="#empty">What is still empty</a></li>
+  <li><a href="#github">Putting it on the internet: GitHub</a></li>
+  <li><a href="#netlify">Netlify, and your domain</a></li>
+  <li><a href="#gbp">Google Business Profile</a></li>
+  <li><a href="#console">Google Search Console</a></li>
+  <li><a href="#rhythm">What to do every month</a></li>
+  <li><a href="#wrong">When something looks wrong</a></li>
+</ol>
+
+<hr>
+
+<h2 id="look"><span class="num">1</span>Look at it first</h2>
+
+<p>Find the folder you were sent. Inside it is a file called
+<code>index.html</code>. <strong>Double-click it.</strong> Your website opens
+in your browser.</p>
+
+<p>Nothing is installed, nothing is running, nothing is online. You are looking
+at files on your own computer. You can do this on any machine, for ever, even
+with no internet.</p>
+
+<p>Click around. The address bar will say something starting with
+<code>file:///</code> — that is normal and it means the website is on your
+computer and nowhere else yet.</p>
+
+<div class="box">
+  <h3>The one thing to understand about this website</h3>
+  <p>It is <strong>just files</strong>. There is no database, no subscription,
+  no account that can expire, no monthly bill. If every company involved
+  disappeared tomorrow, you would still have this folder and it would still
+  work.</p>
+  <p>That is deliberate. <strong>Keep a copy of this folder on a hard drive or
+  a pen drive.</strong> If you ever lose everything else, that copy is your
+  website.</p>
+</div>
+
+<hr>
+
+<h2 id="editor"><span class="num">2</span>The editor</h2>
+
+<p>You change the website through a file called <code>admin.html</code>. It is
+in the same folder. <strong>Double-click it.</strong></p>
+
+<div class="box warn">
+  <h3>Use Chrome or Edge. Not Safari, not Firefox.</h3>
+  <p>The editor saves straight into your folder, and only Chrome and Edge let a
+  page do that. In Safari it will open but it cannot save, which is worse than
+  not opening at all.</p>
+  <p>If Chrome is not your normal browser: right-click <code>admin.html</code>
+  → Open With → Google Chrome.</p>
+</div>
+
+<p>The first thing it shows is a button that says <strong>Open the website
+folder</strong>. Press it, and choose the folder that contains
+<code>index.html</code> — the same folder the editor itself is sitting in.
+Your browser will ask if you are sure you want to let the page edit files.
+Say yes. That permission is what makes the whole thing work.</p>
+
+<p>Across the top are five tabs:</p>
+
+<table>
+  <tr><th>Tab</th><th>What it is for</th></tr>
+  <tr><td><b>Photographs</b></td><td>Add pictures, write what is in them, set which part stays in frame, choose which appear on the home page</td></tr>
+  <tr><td><b>Collections</b></td><td>The four groups your work is sorted into — Portrait, Events, Corporate, Editorial. Rename them, describe them, add a new one</td></tr>
+  <tr><td><b>Hero</b></td><td>The big pictures that fade into each other at the top of the home page</td></tr>
+  <tr><td><b>Film</b></td><td>Links to your films. One still picture each — no video player, which is why the site stays fast</td></tr>
+  <tr><td><b>Details</b></td><td>Your name, phone, WhatsApp, email, the About text, your social links</td></tr>
+</table>
+
+<p>Make a change, press <strong>Save</strong>, then go back to your browser tab
+with the website in it and refresh. That is the whole loop.</p>
+
+<div class="box do">
+  <h3>Do this now, before anything else</h3>
+  <p>Open the editor, change one word in the About text, press Save, refresh
+  the website and see it change. Then change it back.</p>
+  <p>Once you have done that once, you own this website. Until you have done it
+  once, you do not.</p>
+</div>
+
+<hr>
+
+<h2 id="photos"><span class="num">3</span>How to prepare photographs</h2>
+
+<p>This is the part people get wrong, and getting it wrong is the difference
+between a site that looks expensive and one that looks cheap.</p>
+
+<h3>Export at 2000 pixels on the long edge</h3>
+
+<p>Not 6000. The website builds four sizes from what you give it and throws the
+rest away, so a huge file is a long wait for nothing. Not 800 either — that is
+already too small for a laptop screen and it will look soft.</p>
+
+<table>
+  <tr><th>Kind of work</th><th>Shape</th><th>Export at</th></tr>
+  <tr><td>Portrait</td><td>4:5</td><td>2000 × 2500</td></tr>
+  <tr><td>Events, Corporate, Editorial</td><td>3:2</td><td>2000 × 1333</td></tr>
+  <tr><td>Film stills</td><td>16:9</td><td>2000 × 1125</td></tr>
+  <tr><td>Hero, for computers</td><td>wide</td><td>2400 × 1350</td></tr>
+  <tr><td>Hero, for phones</td><td>tall</td><td>1200 × 2133</td></tr>
+</table>
+
+<h3>Four rules</h3>
+
+<ol>
+  <li><strong>High-quality JPEG, sRGB, and do not compress it first.</strong>
+  The editor makes the web version itself. Compressing a picture twice makes
+  skin look like plastic. You are a photographer — that is an insult to your
+  own work.</li>
+  <li><strong>Crop to the shape before you export.</strong> Every picture keeps
+  its own shape, so one 3:2 frame in a row of 4:5 frames leaves a step in the
+  grid. 4:5 and 3:4 look almost the same and are not — crop exactly.</li>
+  <li><strong>Set the focal point on every portrait.</strong> In the editor,
+  click the face. Without it the website keeps the middle of the picture, and
+  faces are usually in the upper third — so on a narrow screen you get a
+  beautifully framed chest.</li>
+  <li><strong>Write what is in the picture.</strong> One short line. Google
+  reads it, and so does anyone using a screen reader. "Bride laughing outside
+  the church, Accra" is right. "IMG_4471" is not.</li>
+</ol>
+
+<div class="box warn">
+  <h3>Never send your masters to the website</h3>
+  <p>Your full-resolution files are what you sell. Keep them on your own drive.
+  If you ever put them in a folder called <code>originals</code> inside the
+  website folder, the setup already blocks that folder from being published —
+  but the real protection is simply not putting them there.</p>
+</div>
+
+<hr>
+
+<h2 id="empty"><span class="num">4</span>What is still empty</h2>
+
+<p>Checked on the day this was written. Everything here is something only you
+can fill in.</p>
+
+<h3>You have five photographs on a photography website</h3>
+
+<p>One Portrait, one Events, one Corporate, two Editorial. That is the single
+biggest thing standing between this site and work coming in. A visitor who
+sees four pictures assumes you have taken four pictures.</p>
+
+<p><strong>Aim for eight to twelve in each collection.</strong> Not your
+whole archive — your best twelve. A portfolio is judged by its weakest picture,
+not its strongest, so anything you are unsure about should be left out.</p>
+
+<h3>No collection has a cover picture</h3>
+
+<p>The Collections page shows a card for each of the four. Each card wants one
+photograph that represents the whole collection. Set it in the editor, on the
+Collections tab. Until then the cards show a labelled empty box — honest, but
+it does not sell anything.</p>
+
+<h3>Only one hero picture has a phone version</h3>
+
+<p>There are five big pictures at the top of the home page. Each one wants
+<em>two</em> files: a wide one for computers and a tall one for phones. Only
+one of the five has its tall version. Most of the people who look at your work
+are on a phone, so this is more important than it sounds. See the sizes in
+section 3.</p>
+
+<h3>No showcase picture is chosen</h3>
+
+<p>On each collection page, one photograph can open out to full width as
+somebody scrolls. It is the nicest thing on the site and it is switched off,
+because it has to be <em>your</em> choice which picture deserves it. One per
+collection, set in the editor.</p>
+
+<h3>No films</h3>
+
+<p>The Film section exists and is empty. Each film is one still picture plus a
+link — there is no video player on the site, deliberately, because an embedded
+player loads half a megabyte of somebody else's code and tracks every visitor
+before anyone presses play. Add a still and a link and it works.</p>
+
+<h3>The About text is ours, not yours</h3>
+
+<p>It was written from what we knew about you, to have something real on the
+page instead of a grey box. <strong>Read it and change it into your own
+words.</strong> It is the second-most-read page on any photographer's site and
+it is the one that sounds like a person or does not.</p>
+
+<div class="box warn">
+  <h3>Two things to check with your own eyes</h3>
+  <p><strong>The logo lettering.</strong> The logo was traced from a file that
+  had been named "Yossel". The name inside the file has been corrected, but
+  nobody has confirmed that the drawing itself spells <em>Essel De
+  Photographer</em> correctly. Open <code>images/logo.svg</code>, look at it,
+  and tell Patrick if a letter is wrong. This is your name — check it.</p>
+  <p><strong>The domain.</strong> The website is built for
+  <code>esseldephotographer.com</code>. If you have not actually bought that
+  address, section 6 is where you do it — and if you buy a different one, tell
+  Patrick, because it is written in one place and has to match.</p>
+</div>
+
+<hr>
+
+<h2 id="github"><span class="num">5</span>Putting it on the internet: GitHub</h2>
+
+<p>Two free services, and you need both. Here is what each one is for, in one
+line each:</p>
+
+<ul>
+  <li><strong>GitHub</strong> keeps your files and remembers every version of
+  them. It is the filing cabinet.</li>
+  <li><strong>Netlify</strong> takes those files and serves them to the world
+  at a real web address. It is the shopfront.</li>
+</ul>
+
+<p>They connect once, and after that everything is automatic: you put new files
+in the filing cabinet and the shopfront updates itself within a minute.</p>
+
+<h3>Step by step</h3>
+
+<ol>
+  <li>Go to <code>github.com</code> and make a free account. Use your working
+  email.</li>
+  <li>Press the <strong>+</strong> at the top right → <strong>New
+  repository</strong>. A repository is just a folder that remembers its own
+  history.</li>
+  <li>Name it <code>essel-de-photographer</code>. Choose
+  <strong>Private</strong>. Do not tick "Add a README". Press
+  <strong>Create repository</strong>.</li>
+  <li>On the next page, find the link that says
+  <strong>uploading an existing file</strong>. Click it.</li>
+  <li>Open your website folder on your computer. Select
+  <strong>everything inside it</strong> — not the folder itself, the things
+  inside it — and drag them onto the GitHub page.</li>
+  <li>Wait for the upload to finish. It will take a few minutes because the
+  photographs are the big part.</li>
+  <li>At the bottom, press <strong>Commit changes</strong>.</li>
+</ol>
+
+<div class="box warn">
+  <h3>Do not upload these three</h3>
+  <p><code>START HERE.html</code> — this file. It is for you, not the public.</p>
+  <p>The <code>originals</code> folder, if you ever make one.</p>
+  <p><code>node_modules</code>, if it ever appears. It is a folder of
+  machinery, not of website.</p>
+  <p>Everything else goes up, including all the photographs.</p>
+</div>
+
+<p class="quiet">There are faster ways to do this with typed commands. You do
+not need them, and neither does Patrick — dragging files in the browser is the
+whole method here, on purpose, because it works on any computer without
+installing anything.</p>
+
+<hr>
+
+<h2 id="netlify"><span class="num">6</span>Netlify, and your domain</h2>
+
+<ol>
+  <li>Go to <code>netlify.com</code>. Press <strong>Sign up</strong> and
+  choose <strong>Sign up with GitHub</strong> — that way the two already know
+  each other.</li>
+  <li>Press <strong>Add new site</strong> → <strong>Import an existing
+  project</strong> → <strong>GitHub</strong>.</li>
+  <li>It will ask permission to see your repositories. Allow it, and pick
+  <code>essel-de-photographer</code>.</li>
+  <li>It will ask for a build command and a publish directory.
+  <strong>Leave the build command empty</strong> and set the publish directory
+  to a single dot: <code>.</code>
+  <br><span class="quiet">There is already a file called
+  <code>netlify.toml</code> in your folder that says exactly this, so it should
+  fill itself in. If it does, leave it alone.</span></li>
+  <li>Press <strong>Deploy</strong>. Wait about a minute.</li>
+</ol>
+
+<p>You now have a live website at an address like
+<code>random-words-12345.netlify.app</code>. Open it on your phone. That is
+your site, on the internet, for free.</p>
+
+<h3>Your own address</h3>
+
+<ol>
+  <li>Buy the domain. Namecheap, Porkbun and Cloudflare all sell them; expect
+  to pay for a year at a time. <strong>Buy it in your own name, with your own
+  email and your own card.</strong> A domain somebody else owns is a business
+  somebody else can switch off.</li>
+  <li>In Netlify: <strong>Domain management</strong> → <strong>Add a
+  domain</strong> → type it in.</li>
+  <li>Netlify will show you either two nameservers or a couple of records to
+  copy. Go to wherever you bought the domain and paste them in.</li>
+  <li>Wait. It can take minutes or it can take most of a day. This is normal
+  and there is nothing to fix while you wait.</li>
+  <li>When it is live, check the address bar says <strong>https</strong> and
+  shows a padlock. Netlify sets that up by itself and it is free.</li>
+</ol>
+
+<div class="box do">
+  <h3>Write these down somewhere safe</h3>
+  <p>The email and password for GitHub, for Netlify, for the domain seller, and
+  for the Google account you use in the next two sections. Four logins. Losing
+  the domain login is the only one that is genuinely painful to recover.</p>
+</div>
+
+<h3>From now on, changing the website is three steps</h3>
+<ol>
+  <li>Edit in <code>admin.html</code> and press Save.</li>
+  <li>Drag the changed files into GitHub, the same way as before. It is usually
+  <code>data/content.js</code> and whatever new files appeared in
+  <code>photos</code>.</li>
+  <li>Netlify notices and updates the live site by itself, in about a minute.</li>
+</ol>
+
+<hr>
+
+<h2 id="gbp"><span class="num">7</span>Google Business Profile</h2>
+
+<p>This is free, it takes half an hour, and for a photographer in Accra it will
+probably bring you more work than the website does on its own. It is what puts
+you in the map when somebody searches <em>photographer near me</em>.</p>
+
+<ol>
+  <li>Go to <code>google.com/business</code> and sign in with a Google account
+  you will keep.</li>
+  <li>Enter your business name exactly as you want it read:
+  <strong>Essel De Photographer</strong>. Spell it the same everywhere, for
+  ever — Google matches businesses partly on the name being identical across
+  the internet.</li>
+  <li>Choose the category <strong>Photographer</strong>. Add
+  <em>Portrait studio</em>, <em>Wedding photographer</em>, <em>Event
+  photographer</em> as extra categories if they are true.</li>
+  <li>If you go to clients rather than having a studio they visit, say so, and
+  set your <strong>service area</strong> — Accra and wherever else you
+  actually work.</li>
+  <li>Put in your phone number and your website address. Use the same phone
+  number that is on the website.</li>
+  <li>Google will verify you, usually by video or by post. Do it properly; an
+  unverified profile does not show.</li>
+</ol>
+
+<h3>Then use it, which is the part people skip</h3>
+
+<ul>
+  <li><strong>Put photographs on it.</strong> Profiles with pictures get far
+  more attention than profiles without. Post a few every month. Google treats a
+  profile that is being updated as a business that is open.</li>
+  <li><strong>Ask every happy client for a review.</strong> Not a vague ask —
+  send them the direct review link the moment you deliver their photographs,
+  while they are pleased. This is the single biggest thing you control.
+  Reviews are the main reason one photographer appears above another.</li>
+  <li><strong>Reply to every review</strong>, good and bad. A calm reply to a
+  complaint reads better to the next customer than no complaint at all.</li>
+  <li><strong>Never buy reviews.</strong> Google is good at spotting them and
+  the punishment is your profile disappearing.</li>
+</ul>
+
+<div class="box">
+  <p><strong>Why the website has no map on it.</strong> An embedded Google map
+  drops tracking cookies on your visitors before they have agreed to anything,
+  which matters under Ghana's Data Protection Act, and it is one more thing
+  that can break. The contact page prints your address as text and links out to
+  the map instead — which opens the map app the visitor already has, with their
+  own location in it, in one tap. It is better for them and safer for you.</p>
+</div>
+
+<hr>
+
+<h2 id="console"><span class="num">8</span>Google Search Console</h2>
+
+<p>Search Console is Google's own report on your website: what people searched
+for to find you, which pages they landed on, and anything broken. Free, and it
+is the only honest source for that information.</p>
+
+<ol>
+  <li>Go to <code>search.google.com/search-console</code> and sign in with the
+  same Google account.</li>
+  <li>Press <strong>Add property</strong> and choose
+  <strong>Domain</strong>. Type your domain with no <code>https://</code> and
+  no <code>www</code> — just <code>esseldephotographer.com</code>.</li>
+  <li>It will give you one line of text called a <strong>TXT record</strong>.
+  Copy it, go to wherever you bought your domain, find DNS settings, and add it
+  as a new TXT record.</li>
+  <li>Go back and press <strong>Verify</strong>. If it fails, wait an hour and
+  press it again — DNS changes are slow, and that is the usual reason.</li>
+</ol>
+
+<h3>Submit your sitemap</h3>
+
+<p>A sitemap is a list of every page on your site, written for search engines
+so they do not have to guess. <strong>Yours already exists</strong> — it is the
+file <code>sitemap.xml</code> in your folder, and it was written for you. You
+just have to tell Google where it is.</p>
+
+<ol>
+  <li>In Search Console, click <strong>Sitemaps</strong> in the left menu.</li>
+  <li>In the box, type <code>sitemap.xml</code> and press
+  <strong>Submit</strong>.</li>
+  <li>It will say "Success" or "Couldn't fetch". If it says couldn't fetch,
+  wait a day and look again — it very often sorts itself out.</li>
+</ol>
+
+<p>Then press <strong>Request indexing</strong> on your home page: in the bar
+at the top, paste your home page address, wait for it to check, and press
+<strong>Request indexing</strong>. That asks Google to come and look now
+rather than whenever it gets round to it.</p>
+
+<div class="box">
+  <h3>Your site is already set up to be found</h3>
+  <p>Indexing is <strong>on</strong>. The file that tells search engines what
+  they may look at (<code>robots.txt</code>) says yes to everything except the
+  editor. The sitemap is written. Every page carries a proper title and
+  description. None of that needs doing again.</p>
+  <p>What it cannot do is invent content. Google ranks pages with things on
+  them. Go back to section 4.</p>
+</div>
+
+<h3>Expect nothing for a while</h3>
+
+<p>A new website with a new domain is not going to appear on the first page for
+anything competitive for months. This is normal, it is not broken, and nobody
+who promises otherwise is telling you the truth. What moves it: photographs,
+your Google Business Profile, real reviews, and time.</p>
+
+<hr>
+
+<h2 id="rhythm"><span class="num">9</span>What to do every month</h2>
+
+<ul class="todo">
+  <li>Add your best few photographs from the month's work. Ten minutes in the
+  editor.</li>
+  <li>Post two or three pictures to your Google Business Profile.</li>
+  <li>Ask every client you delivered to for a review, with the direct link.</li>
+  <li>Open Search Console and look at what people actually searched for to
+  reach you. It is usually not what you expect, and it tells you what to
+  photograph and what to write next.</li>
+  <li>Check the site on your own phone. You will spot things there you never
+  see on a laptop.</li>
+</ul>
+
+<hr>
+
+<h2 id="wrong"><span class="num">10</span>When something looks wrong</h2>
+
+<table>
+  <tr><th>What you see</th><th>What it usually is</th></tr>
+  <tr>
+    <td>The editor opens but will not save</td>
+    <td>You are in Safari or Firefox. Open it in Chrome or Edge.</td>
+  </tr>
+  <tr>
+    <td>You saved, but the website looks the same</td>
+    <td>Refresh the page. If it is still the same, hold Shift and refresh —
+    your browser is showing you a remembered copy.</td>
+  </tr>
+  <tr>
+    <td>You changed it, but the live site is old</td>
+    <td>You saved on your computer but did not drag the changed files into
+    GitHub. Saving and publishing are two different things.</td>
+  </tr>
+  <tr>
+    <td>A picture looks soft or fuzzy</td>
+    <td>It was exported too small, or compressed before it was uploaded. Export
+    again at 2000px from the original.</td>
+  </tr>
+  <tr>
+    <td>A face is cut off on a phone</td>
+    <td>The focal point was not set. Open the editor, find the picture, click
+    the face.</td>
+  </tr>
+  <tr>
+    <td>An empty labelled box where a picture should be</td>
+    <td>That is the site being honest — nothing has been put there yet. It is a
+    to-do, not a fault.</td>
+  </tr>
+  <tr>
+    <td>Google still cannot find you</td>
+    <td>Almost always time. Check in Search Console that the sitemap says
+    Success, then wait.</td>
+  </tr>
+</table>
+
+<div class="box do">
+  <h3>Before you ask for help</h3>
+  <p>Say <em>what you did</em>, <em>what you expected</em>, and <em>what
+  happened instead</em> — and send a screenshot. Those three things turn an
+  hour of guessing into five minutes.</p>
+</div>
+
+<hr>
+
+<h2>One last thing</h2>
+
+<p>This site is deliberately built to depend on nothing. No plugins to update,
+no subscription to forget, no theme that breaks, no database to go down. That
+is why it will still work in five years, and it is also why nobody can hold it
+hostage — the whole thing is in a folder you own.</p>
+
+<p>The other side of that bargain is that <strong>it will only ever be as good
+as what you put into it.</strong> There is no template to hide behind and no
+stock photograph anywhere on it. Every picture on that site will be one you
+took.</p>
+
+<p>Start with section 4. Twelve photographs per collection. Everything else
+follows from that.</p>
+
+<p class="quiet" style="margin-top:44px">Built by Selasie Visual Studio ·
+Written for Essel De Photographer, 25 September 2026 · This file is for you and
+is not published with the site.</p>
+
+</div>
+</body>
+</html>
